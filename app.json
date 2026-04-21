@@ -4,11 +4,10 @@
     "slug": "sitedeck-pro",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1E3A5F"
+      "backgroundColor": "#1E3A5F",
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,12 +18,8 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1E3A5F"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "pro.sitedeck.sitedeckpro"
+      "package": "pro.sitedeck.sitedeckpro",
+      "edgeToEdgeEnabled": true
     },
     "plugins": [
       "expo-font",
