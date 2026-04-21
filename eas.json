@@ -2,9 +2,6 @@
   "cli": {
     "version": ">= 3.0.0"
   },
-  "hooks": {
-    "pre-install": "./eas-build-pre-install.sh"
-  },
   "build": {
     "development": {
       "developmentClient": true,
