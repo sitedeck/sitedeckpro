@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
+import { onAuthStateChanged, getAuth } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
-import { auth, db } from '../../firebase.config'
+import { db } from '../firebase.config'
 import { createStackNavigator } from '@react-navigation/stack'
 import LoginScreen from '../screens/auth/LoginScreen'
 import SignUpScreen from '../screens/auth/SignUpScreen'
@@ -25,6 +25,7 @@ export default function AuthNavigator({ onApproved }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const auth = getAuth()
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
 
