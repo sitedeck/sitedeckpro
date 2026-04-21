@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "SiteDeck Pro",
+    "slug": "sitedeck-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E3A5F"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pro.sitedeck.sitedeckpro",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SiteDeck Pro needs your location to track crew presence on job sites.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E3A5F"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "pro.sitedeck.sitedeckpro"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": false
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a4f6eb82-f033-4e16-8bd9-a3f0f012cfe6"
+      }
+    },
+    "owner": "jmbdab04"
+  }
+}
