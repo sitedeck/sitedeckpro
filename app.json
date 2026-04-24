@@ -16,22 +16,13 @@
         "NSLocationWhenInUseUsageDescription": "SiteDeck Pro needs your location to track crew presence on job sites.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
     "android": {
-      "package": "pro.sitedeck.sitedeckpro",
-      "edgeToEdgeEnabled": true
+      "package": "pro.sitedeck.sitedeckpro"
     },
     "plugins": [
-      "expo-font",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "newArchEnabled": false
-          }
-        }
-      ]
+      "expo-font"
     ],
     "extra": {
       "eas": {
