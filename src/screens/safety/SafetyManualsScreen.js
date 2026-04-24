@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_SAFETY_MANUALS } from '../../constants/collections'
+import { ADMIN } from '../../constants/roles'
 import * as DocumentPicker from 'expo-document-picker'
 
 export default function SafetyManualsScreen() {
@@ -20,7 +22,7 @@ export default function SafetyManualsScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserRole(userDoc.data().role)
@@ -32,7 +34,7 @@ export default function SafetyManualsScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'safetyManuals'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_SAFETY_MANUALS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setManuals(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -72,7 +74,7 @@ export default function SafetyManualsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Safety Manuals</Text>
-        {userRole === 'admin' && (
+        {userRole === ADMIN && (
           <TouchableOpacity style={styles.uploadBtn} onPress={() => navigation.navigate('UploadManual')}>
             <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
           </TouchableOpacity>

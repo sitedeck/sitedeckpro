@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, addDoc, collection, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_EQUIPMENT, COL_USERS, COL_PROJECTS } from '../../constants/collections'
 
 const STATUS_COLORS = { available: '#16a34a', 'checked-out': '#f59e0b', maintenance: '#dc2626' }
 
@@ -27,11 +28,11 @@ export default function EquipmentDetailScreen({ navigation, route }) {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc: docRef } = require('firebase/firestore')
-        const userDoc = await getDoc(docRef(db, 'users', user.uid))
+        const userDoc = await getDoc(docRef(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           const orgId = userDoc.data().orgId
-          onSnapshot(query(collection(db, 'users'), where('orgId', '==', orgId)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-          onSnapshot(query(collection(db, 'projects'), where('orgId', '==', orgId)), snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+          onSnapshot(query(collection(db, COL_USERS), where('orgId', '==', orgId)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+          onSnapshot(query(collection(db, COL_PROJECTS), where('orgId', '==', orgId)), snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
       }
     })
@@ -40,7 +41,7 @@ export default function EquipmentDetailScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'equipment', equipmentId))
+      const snap = await getDoc(doc(db, COL_EQUIPMENT, equipmentId))
       if (snap.exists()) setEquipment({ id: snap.id, ...snap.data() })
       setLoading(false)
     }
@@ -52,7 +53,7 @@ export default function EquipmentDetailScreen({ navigation, route }) {
     if (!selectedProject) { Alert.alert('Required', 'Select a project'); return }
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'equipment', equipmentId), {
+      await updateDoc(doc(db, COL_EQUIPMENT, equipmentId), {
         status: 'checked-out',
         assignedTo: selectedUser,
         assignedToName: users.find(u => u.id === selectedUser)?.name || '',
@@ -60,7 +61,7 @@ export default function EquipmentDetailScreen({ navigation, route }) {
         checkedOutAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
-      const snap = await getDoc(doc(db, 'equipment', equipmentId))
+      const snap = await getDoc(doc(db, COL_EQUIPMENT, equipmentId))
       setEquipment({ id: snap.id, ...snap.data() })
       setShowCheckOut(false)
       Alert.alert('Checked Out', 'Equipment assigned successfully.')
@@ -71,7 +72,7 @@ export default function EquipmentDetailScreen({ navigation, route }) {
   const handleCheckIn = async () => {
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'equipment', equipmentId), {
+      await updateDoc(doc(db, COL_EQUIPMENT, equipmentId), {
         status: 'available',
         assignedTo: null,
         assignedToName: null,
@@ -80,7 +81,7 @@ export default function EquipmentDetailScreen({ navigation, route }) {
         checkedInAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
-      const snap = await getDoc(doc(db, 'equipment', equipmentId))
+      const snap = await getDoc(doc(db, COL_EQUIPMENT, equipmentId))
       setEquipment({ id: snap.id, ...snap.data() })
       setShowCheckIn(false)
       setConditionNotes('')

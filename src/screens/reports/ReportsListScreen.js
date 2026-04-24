@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_DAILY_REPORTS, COL_USERS } from '../../constants/collections'
 
 export default function ReportsListScreen() {
   const navigation = useNavigation()
@@ -17,7 +18,7 @@ export default function ReportsListScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setOrgId(userDoc.data().orgId)
       }
     })
@@ -26,7 +27,7 @@ export default function ReportsListScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'dailyReports'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_DAILY_REPORTS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)

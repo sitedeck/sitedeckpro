@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_CERTIFICATIONS } from '../../constants/collections'
 
 const CERT_OPTIONS = ['OSHA 10', 'OSHA 30', 'First Aid/CPR', 'Equipment Operator', 'Confined Space', 'Fall Protection', 'Electrical Safety', 'Custom']
 
@@ -30,7 +31,7 @@ export default function CertificationsScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid)
-        const q = query(collection(db, 'certifications'), where('userId', '==', user.uid))
+        const q = query(collection(db, COL_CERTIFICATIONS), where('userId', '==', user.uid))
         const unsub = onSnapshot(q, snap => {
           setCerts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
           setLoading(false)

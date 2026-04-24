@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_COMMUNICATIONS } from '../../constants/collections'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
 
 export default function CommunicationsScreen() {
   const navigation = useNavigation()
@@ -19,7 +21,7 @@ export default function CommunicationsScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserRole(userDoc.data().role)
@@ -31,7 +33,7 @@ export default function CommunicationsScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'communications'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_COMMUNICATIONS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -69,7 +71,7 @@ export default function CommunicationsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Communications</Text>
-        {(userRole === 'admin' || userRole === 'supervisor') && (
+        {(userRole === ADMIN || userRole === SUPERVISOR) && (
           <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('ComposeMessage')}>
             <Ionicons name="create-outline" size={22} color="#fff" />
           </TouchableOpacity>

@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
-import { addDoc, collection, onSnapshot, query, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_COMMUNICATIONS, COL_USERS } from '../../constants/collections'
 
 const TYPE_OPTIONS = ['Safety Alert', 'Event', 'General']
 
@@ -26,11 +27,11 @@ export default function ComposeMessageScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserName(user.displayName || userDoc.data().name || 'Unknown')
-          const q = query(collection(db, 'users'), where('orgId', '==', userDoc.data().orgId))
+          const q = query(collection(db, COL_USERS), where('orgId', '==', userDoc.data().orgId))
           onSnapshot(q, snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
       }
@@ -46,7 +47,7 @@ export default function ComposeMessageScreen() {
 
     setSaving(true)
     try {
-      await addDoc(collection(db, 'communications'), {
+      await addDoc(collection(db, COL_COMMUNICATIONS), {
         orgId,
         type,
         title: title.trim(),

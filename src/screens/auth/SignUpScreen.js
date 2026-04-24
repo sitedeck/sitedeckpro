@@ -3,6 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView 
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { auth, db } from '../../firebase.config'
 import { doc, collection, addDoc, query, where, getDocs } from 'firebase/firestore'
+import { COL_ORGANIZATIONS, COL_USERS } from '../../constants/collections'
+import { STATUS_PENDING, STATUS_APPROVED } from '../../constants/statuses'
+import { ADMIN, MEMBER } from '../../constants/roles'
+import { PLAN_CORE } from '../../constants/plans'
 
 export default function SignUpScreen({ navigation }) {
   const [name, setName] = useState('')
@@ -21,7 +25,7 @@ export default function SignUpScreen({ navigation }) {
     try {
       // Check if org already exists
       const orgQuery = query(
-        collection(db, 'organizations'),
+        collection(db, COL_ORGANIZATIONS),
         where('name', '==', companyName.trim())
       )
       const orgSnap = await getDocs(orgQuery)
@@ -34,12 +38,12 @@ export default function SignUpScreen({ navigation }) {
       if (orgExists) {
         // Joining existing org — pending status
         const orgId = orgSnap.docs[0].id
-        await addDoc(collection(db, 'users'), {
+        await addDoc(collection(db, COL_USERS), {
           uid: userCredential.user.uid,
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          role: 'member',
-          status: 'pending',
+          role: MEMBER,
+          status: STATUS_PENDING,
           orgId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -48,19 +52,19 @@ export default function SignUpScreen({ navigation }) {
         Alert.alert('Request Sent', 'Your account is pending approval from your admin.')
       } else {
         // First user — create org and admin user
-        const orgRef = await addDoc(collection(db, 'organizations'), {
+        const orgRef = await addDoc(collection(db, COL_ORGANIZATIONS), {
           name: companyName.trim(),
-          plan: 'core',
+          plan: PLAN_CORE,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         })
 
-        await addDoc(collection(db, 'users'), {
+        await addDoc(collection(db, COL_USERS), {
           uid: userCredential.user.uid,
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          role: 'admin',
-          status: 'approved',
+          role: ADMIN,
+          status: STATUS_APPROVED,
           orgId: orgRef.id,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()

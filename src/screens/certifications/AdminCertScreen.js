@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_CERTIFICATIONS } from '../../constants/collections'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
 
 const getDaysLeft = (expiry) => {
   if (!expiry) return 999
@@ -29,7 +31,7 @@ export default function AdminCertScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setUserRole(userDoc.data().role)
           setOrgId(userDoc.data().orgId)
@@ -40,8 +42,8 @@ export default function AdminCertScreen() {
   }, [])
 
   useEffect(() => {
-    if (!orgId || (userRole !== 'admin' && userRole !== 'supervisor')) return
-    const q = query(collection(db, 'certifications'), where('orgId', '==', orgId))
+    if (!orgId || (userRole !== ADMIN && userRole !== SUPERVISOR)) return
+    const q = query(collection(db, COL_CERTIFICATIONS), where('orgId', '==', orgId))
     const unsub = onSnapshot(q, snap => {
       setCerts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -62,7 +64,7 @@ export default function AdminCertScreen() {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
-  if (userRole !== 'admin' && userRole !== 'supervisor') {
+  if (userRole !== ADMIN && userRole !== SUPERVISOR) {
     return <View style={styles.accessDenied}><Text style={styles.accessText}>Access denied.</Text></View>
   }
 

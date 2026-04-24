@@ -6,8 +6,11 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, doc, getDoc, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_LESSONS, COL_USERS } from '../../constants/collections'
+import { LESSON_OPEN, LESSON_REVIEWED, LESSON_CLOSED } from '../../constants/statuses'
+import { ADMIN } from '../../constants/roles'
 
 const { width } = Dimensions.get('window')
 
@@ -22,9 +25,9 @@ const SEVERITY_COLORS = {
 }
 
 const STATUS_COLORS = {
-  Open: '#dc2626',
-  Reviewed: '#2563eb',
-  Closed: '#16a34a'
+  [LESSON_OPEN]: '#dc2626',
+  [LESSON_REVIEWED]: '#2563eb',
+  [LESSON_CLOSED]: '#16a34a'
 }
 
 export default function HomeScreen() {
@@ -40,8 +43,7 @@ export default function HomeScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser)
-        const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, firebaseUser.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserRole(userDoc.data().role)
@@ -54,7 +56,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!orgId) return
     const q = query(
-      collection(db, 'lessons'),
+      collection(db, COL_LESSONS),
       where('orgId', '==', orgId),
       orderBy('createdAt', 'desc')
     )
@@ -69,17 +71,17 @@ export default function HomeScreen() {
   const onRefresh = useCallback(() => setRefreshing(true), [])
 
   const getCategoryCount = (category) =>
-    lessons.filter(l => l.category === category && l.status === 'Open').length
+    lessons.filter(l => l.category === category && l.status === LESSON_OPEN).length
 
   const getWorkAreaCount = (area) =>
-    lessons.filter(l => l.workArea === area && l.status === 'Open').length
+    lessons.filter(l => l.workArea === area && l.status === LESSON_OPEN).length
 
   const recentLessons = lessons.slice(0, 4)
 
   // Chart data
-  const openCount = lessons.filter(l => l.status === 'Open').length
-  const reviewedCount = lessons.filter(l => l.status === 'Reviewed').length
-  const closedCount = lessons.filter(l => l.status === 'Closed').length
+  const openCount = lessons.filter(l => l.status === LESSON_OPEN).length
+  const reviewedCount = lessons.filter(l => l.status === LESSON_REVIEWED).length
+  const closedCount = lessons.filter(l => l.status === LESSON_CLOSED).length
   const criticalCount = lessons.filter(l => l.severity === 'Critical').length
 
   const formatDate = (iso) => {
@@ -93,7 +95,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={styles.logoText}>SiteDeck Pro</Text>
         <View style={styles.headerRight}>
-          {userRole === 'admin' && (
+          {userRole === ADMIN && (
             <TouchableOpacity style={styles.headerBtn}>
               <Ionicons name="settings-outline" size={22} color="#1a1a1a" />
             </TouchableOpacity>
@@ -190,7 +192,7 @@ export default function HomeScreen() {
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[lesson.status] || '#888') + '20' }]}>
                       <Text style={[styles.statusText, { color: STATUS_COLORS[lesson.status] || '#888' }]}>
-                        {lesson.status || 'Open'}
+                        {lesson.status || LESSON_OPEN}
                       </Text>
                     </View>
                   </View>

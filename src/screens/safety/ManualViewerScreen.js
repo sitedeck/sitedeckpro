@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_SAFETY_MANUALS } from '../../constants/collections'
 
 export default function ManualViewerScreen({ navigation, route }) {
   const { manualId } = route.params
@@ -19,7 +20,7 @@ export default function ManualViewerScreen({ navigation, route }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid)
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setUserName(user.displayName || userDoc.data().name || 'Unknown')
       }
     })
@@ -28,7 +29,7 @@ export default function ManualViewerScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'safetyManuals', manualId))
+      const snap = await getDoc(doc(db, COL_SAFETY_MANUALS, manualId))
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
         setManual(data)
@@ -42,7 +43,7 @@ export default function ManualViewerScreen({ navigation, route }) {
   const handleAcknowledge = async () => {
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'safetyManuals', manualId), {
+      await updateDoc(doc(db, COL_SAFETY_MANUALS, manualId), {
         acknowledgments: arrayUnion({
           userId,
           userName,

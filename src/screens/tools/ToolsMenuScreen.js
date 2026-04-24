@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_USERS, COL_ORGANIZATIONS } from '../../constants/collections'
+import { PLAN_CORE, PLAN_FIELD, PLAN_PREMIUM, PLAN_ENTERPRISE, PLAN_ORDER, PLAN_NAMES } from '../../constants/plans'
 
 const TOOLS = [
   {
@@ -12,7 +14,7 @@ const TOOLS = [
     name: 'Job Hazard Analysis',
     description: 'Identify hazards before work begins',
     icon: 'shield-checkmark-outline',
-    plans: ['field', 'premium', 'enterprise'],
+    plans: [PLAN_FIELD, PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'JHAList'
   },
   {
@@ -20,7 +22,7 @@ const TOOLS = [
     name: 'Safety Manuals',
     description: 'View and acknowledge safety manuals',
     icon: 'document-text-outline',
-    plans: ['field', 'premium', 'enterprise'],
+    plans: [PLAN_FIELD, PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'SafetyManuals'
   },
   {
@@ -28,7 +30,7 @@ const TOOLS = [
     name: 'Toolbox Talks',
     description: 'Schedule and conduct safety talks',
     icon: 'mic-outline',
-    plans: ['field', 'premium', 'enterprise'],
+    plans: [PLAN_FIELD, PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'ToolboxList'
   },
   {
@@ -36,7 +38,7 @@ const TOOLS = [
     name: 'Daily Reports',
     description: 'Submit daily job site reports',
     icon: 'document-outline',
-    plans: ['premium', 'enterprise'],
+    plans: [PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'ReportsList'
   },
   {
@@ -44,7 +46,7 @@ const TOOLS = [
     name: 'Timesheets',
     description: 'Clock in/out and track hours',
     icon: 'time-outline',
-    plans: ['field', 'premium', 'enterprise'],
+    plans: [PLAN_FIELD, PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'Timesheet'
   },
   {
@@ -52,7 +54,7 @@ const TOOLS = [
     name: 'Certifications',
     description: 'Track employee certifications',
     icon: 'ribbon-outline',
-    plans: ['premium', 'enterprise'],
+    plans: [PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'Certifications'
   },
   {
@@ -60,13 +62,10 @@ const TOOLS = [
     name: 'Equipment',
     description: 'Track and manage equipment',
     icon: 'construct-outline',
-    plans: ['premium', 'enterprise'],
+    plans: [PLAN_PREMIUM, PLAN_ENTERPRISE],
     screen: 'EquipmentList'
   }
 ]
-
-const PLAN_ORDER = ['core', 'field', 'premium', 'enterprise']
-const PLAN_NAMES = { core: 'Core', field: 'Field', premium: 'Premium', enterprise: 'Enterprise' }
 
 export default function ToolsMenuScreen() {
   const navigation = useNavigation()
@@ -79,12 +78,12 @@ export default function ToolsMenuScreen() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
-          const orgDoc = await getDoc(doc(db, 'organizations', userDoc.data().orgId))
+          const orgDoc = await getDoc(doc(db, COL_ORGANIZATIONS, userDoc.data().orgId))
           if (orgDoc.exists()) {
-            setOrgPlan(orgDoc.data().plan || 'core')
+            setOrgPlan(orgDoc.data().plan || PLAN_CORE)
           }
         }
         setLoading(false)

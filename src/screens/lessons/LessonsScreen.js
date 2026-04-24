@@ -8,10 +8,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_LESSONS } from '../../constants/collections'
+import { LESSON_OPEN, LESSON_REVIEWED, LESSON_CLOSED } from '../../constants/statuses'
 
 const SEVERITY_COLORS = { Low: '#3b82f6', Medium: '#f59e0b', High: '#f97316', Critical: '#dc2626' }
-const STATUS_COLORS = { Open: '#dc2626', Reviewed: '#2563eb', Closed: '#16a34a' }
-const FILTER_PILLS = ['All', 'Open', 'Reviewed', 'Closed']
+const STATUS_COLORS = { [LESSON_OPEN]: '#dc2626', [LESSON_REVIEWED]: '#2563eb', [LESSON_CLOSED]: '#16a34a' }
+const FILTER_PILLS = ['All', LESSON_OPEN, LESSON_REVIEWED, LESSON_CLOSED]
 const CATEGORY_COLORS = {
   Engineering: '#9333ea',
   Execution: '#2563eb',
@@ -38,7 +40,7 @@ export default function LessonsScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setOrgId(userDoc.data().orgId)
       }
     })
@@ -48,7 +50,7 @@ export default function LessonsScreen() {
   useEffect(() => {
     if (!orgId) return
 
-    let q = query(collection(db, 'lessons'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    let q = query(collection(db, COL_LESSONS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
       let data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
 
@@ -102,7 +104,7 @@ export default function LessonsScreen() {
         </View>
         <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[item.status] || '#888') + '20' }]}>
           <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] || '#888' }]}>
-            {item.status || 'Open'}
+            {item.status || LESSON_OPEN}
           </Text>
         </View>
       </View>

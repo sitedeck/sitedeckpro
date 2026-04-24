@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TOOLBOX_TALKS } from '../../constants/collections'
+import { TOOLBOX_OPEN } from '../../constants/statuses'
 
 export default function ToolboxDetailScreen({ navigation, route }) {
   const { talkId } = route.params
@@ -22,7 +24,7 @@ export default function ToolboxDetailScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'toolboxTalks', talkId))
+      const snap = await getDoc(doc(db, COL_TOOLBOX_TALKS, talkId))
       if (snap.exists()) setTalk({ id: snap.id, ...snap.data() })
       setLoading(false)
     }
@@ -35,8 +37,8 @@ export default function ToolboxDetailScreen({ navigation, route }) {
       const updatedAttendees = talk.attendees.map(a =>
         a.userId === userId ? { ...a, signedOff: true, signedOffAt: new Date().toISOString() } : a
       )
-      await updateDoc(doc(db, 'toolboxTalks', talkId), { attendees: updatedAttendees })
-      const snap = await getDoc(doc(db, 'toolboxTalks', talkId))
+      await updateDoc(doc(db, COL_TOOLBOX_TALKS, talkId), { attendees: updatedAttendees })
+      const snap = await getDoc(doc(db, COL_TOOLBOX_TALKS, talkId))
       setTalk({ id: snap.id, ...snap.data() })
       Alert.alert('Signed', 'Your attendance has been confirmed.')
     } catch (err) { Alert.alert('Error', err.message) }
@@ -70,7 +72,7 @@ export default function ToolboxDetailScreen({ navigation, route }) {
         </View>
         <View style={[styles.lockBadge, { backgroundColor: talk.locked ? '#f0fdf4' : '#fef3c7' }]}>
           <Ionicons name={talk.locked ? 'lock-closed' : 'lock-open-outline'} size={14} color={talk.locked ? '#16a34a' : '#f59e0b'} />
-          <Text style={[styles.lockText, { color: talk.locked ? '#16a34a' : '#f59e0b' }]}>{talk.locked ? 'Locked' : 'Open'}</Text>
+          <Text style={[styles.lockText, { color: talk.locked ? '#16a34a' : '#f59e0b' }]}>{talk.locked ? 'Locked' : TOOLBOX_OPEN}</Text>
         </View>
 
         {talk.description && <>

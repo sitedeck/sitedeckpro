@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, addDoc, collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_LESSONS, COL_PROJECTS, COL_USERS, COL_ACTIVITY_FEED } from '../../constants/collections'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
 
 const SEVERITY_OPTIONS = ['Low', 'Medium', 'High', 'Critical']
 const SEVERITY_COLORS = { Low: '#3b82f6', Medium: '#f59e0b', High: '#f97316', Critical: '#dc2626' }
@@ -20,6 +22,7 @@ export default function EditLessonScreen() {
   const { lessonId } = route.params
 
   const [user, setUser] = useState(null)
+  const [orgId, setOrgId] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [userName, setUserName] = useState('')
   const [title, setTitle] = useState('')
@@ -36,13 +39,14 @@ export default function EditLessonScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser)
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, firebaseUser.uid))
         if (userDoc.exists()) {
           setUserRole(userDoc.data().role)
+          setOrgId(userDoc.data().orgId)
           setUserName(firebaseUser.displayName || userDoc.data().name || 'Unknown')
 
           // Load projects
-          const q = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
+          const q = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
           onSnapshot(q, (snap) => {
             setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
           })
@@ -54,7 +58,7 @@ export default function EditLessonScreen() {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'lessons', lessonId))
+      const snap = await getDoc(doc(db, COL_LESSONS, lessonId))
       if (snap.exists()) {
         const data = snap.data()
         setTitle(data.title || '')
@@ -77,7 +81,7 @@ export default function EditLessonScreen() {
 
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'lessons', lessonId), {
+      await updateDoc(doc(db, COL_LESSONS, lessonId), {
         title: title.trim(),
         description: description.trim(),
         category,
@@ -88,8 +92,8 @@ export default function EditLessonScreen() {
       })
 
       // Write activity feed
-      await addDoc(collection(db, 'activityFeed'), {
-        orgId: userRole,
+      await addDoc(collection(db, COL_ACTIVITY_FEED), {
+        orgId: orgId,
         type: 'lesson_updated',
         lessonId,
         lessonTitle: title.trim(),
@@ -118,7 +122,7 @@ export default function EditLessonScreen() {
     )
   }
 
-  if (userRole !== 'admin' && userRole !== 'supervisor') {
+  if (userRole !== ADMIN && userRole !== SUPERVISOR) {
     return (
       <View style={styles.accessDenied}>
         <Ionicons name="lock-closed" size={48} color="#ccc" />

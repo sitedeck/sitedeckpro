@@ -6,6 +6,7 @@ import * as Speech from 'expo-speech'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_DAILY_REPORTS, COL_PROJECTS } from '../../constants/collections'
 
 export default function NewReportScreen() {
   const navigation = useNavigation()
@@ -28,11 +29,11 @@ export default function NewReportScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserName(user.displayName || userDoc.data().name || 'Unknown')
-          const q = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
+          const q = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
           onSnapshot(q, snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
       }
@@ -53,7 +54,7 @@ export default function NewReportScreen() {
     setSaving(true)
     try {
       const createdAt = new Date().toISOString()
-      await addDoc(collection(db, 'dailyReports'), {
+      await addDoc(collection(db, COL_DAILY_REPORTS), {
         orgId,
         projectId: selectedProject,
         projectName: projects.find(p => p.id === selectedProject)?.name || '',

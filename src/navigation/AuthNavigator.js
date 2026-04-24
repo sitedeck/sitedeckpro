@@ -8,6 +8,7 @@ import SignUpScreen from '../screens/auth/SignUpScreen'
 import PendingScreen from '../screens/auth/PendingScreen'
 import RejectedScreen from '../screens/auth/RejectedScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
+import { STATUS_APPROVED, STATUS_PENDING, STATUS_REJECTED } from '../constants/statuses'
 
 const Stack = createStackNavigator()
 
@@ -35,7 +36,7 @@ export default function AuthNavigator({ onApproved }) {
           if (userDoc.exists()) {
             const status = userDoc.data().status
             setUserStatus(status)
-            if (status === 'approved' && onApproved) {
+            if (status === STATUS_APPROVED && onApproved) {
               onApproved()
             }
           } else {
@@ -63,11 +64,11 @@ export default function AuthNavigator({ onApproved }) {
     return <AuthStack />
   }
 
-  if (userStatus === 'pending') {
+  if (userStatus === STATUS_PENDING) {
     return <PendingScreen />
   }
 
-  if (userStatus === 'rejected') {
+  if (userStatus === STATUS_REJECTED) {
     return <RejectedScreen />
   }
 

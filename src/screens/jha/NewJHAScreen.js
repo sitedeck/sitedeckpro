@@ -6,6 +6,8 @@ import * as Speech from 'expo-speech'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_JHA, COL_PROJECTS } from '../../constants/collections'
+import { JHA_DRAFT } from '../../constants/statuses'
 
 const RISK_LEVELS = ['Low', 'Medium', 'High']
 const PPE_OPTIONS = ['Hard Hat', 'Safety Glasses', 'Gloves', 'High-Vis Vest', 'Fall Protection', 'Respirator', 'Face Shield', 'Other']
@@ -30,11 +32,11 @@ export default function NewJHAScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserName(user.displayName || userDoc.data().name || 'Unknown')
-          const q = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
+          const q = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
           onSnapshot(q, snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
       }
@@ -56,7 +58,7 @@ export default function NewJHAScreen() {
 
     setSaving(true)
     try {
-      await addDoc(collection(db, 'jha'), {
+      await addDoc(collection(db, COL_JHA), {
         orgId,
         projectId: selectedProject || null,
         description: workDescription.trim(),
@@ -66,7 +68,7 @@ export default function NewJHAScreen() {
         crewSignoffs: [],
         createdBy: userId,
         createdByName: userName,
-        status: 'Draft',
+        status: JHA_DRAFT,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })

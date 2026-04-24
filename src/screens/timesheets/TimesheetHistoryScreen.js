@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TIMESHEETS } from '../../constants/collections'
+import { TIMESHEET_PENDING } from '../../constants/statuses'
 
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#16a34a', rejected: '#dc2626' }
 
@@ -18,7 +20,7 @@ export default function TimesheetHistoryScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid)
-        const q = query(collection(db, 'timesheets'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
+        const q = query(collection(db, COL_TIMESHEETS), where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
         const unsub = onSnapshot(q, snap => {
           setTimesheets(snap.docs.map(d => ({ id: d.id, ...d.data() })))
           setLoading(false)
@@ -41,7 +43,7 @@ export default function TimesheetHistoryScreen() {
       <View style={styles.cardTop}>
         <Text style={styles.cardDate}>{formatDate(item.clockIn)}</Text>
         <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[item.status] || '#888') + '20' }]}>
-          <Text style={[styles.badgeText, { color: STATUS_COLORS[item.status] || '#888' }]}>{item.status || 'pending'}</Text>
+          <Text style={[styles.badgeText, { color: STATUS_COLORS[item.status] || '#888' }]}>{item.status || TIMESHEET_PENDING}</Text>
         </View>
       </View>
       <View style={styles.timeRow}>

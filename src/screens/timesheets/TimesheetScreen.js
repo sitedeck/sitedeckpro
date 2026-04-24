@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection, onSnapshot, query, where, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TIMESHEETS, COL_PROJECTS } from '../../constants/collections'
+import { TIMESHEET_PENDING } from '../../constants/statuses'
 
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#16a34a', rejected: '#dc2626' }
 
@@ -27,13 +29,13 @@ export default function TimesheetScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc: docRef } = require('firebase/firestore')
-        const userDoc = await getDoc(docRef(db, 'users', user.uid))
+        const userDoc = await getDoc(docRef(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
-          const projQ = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId))
+          const projQ = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId))
           onSnapshot(projQ, snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
-        const tsQ = query(collection(db, 'timesheets'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
+        const tsQ = query(collection(db, COL_TIMESHEETS), where('userId', '==', user.uid), orderBy('createdAt', 'desc'))
         onSnapshot(tsQ, snap => {
           setTimesheets(snap.docs.map(d => ({ id: d.id, ...d.data() })))
           const active = snap.docs.find(d => d.data().status === 'clocked_in')
@@ -67,7 +69,7 @@ export default function TimesheetScreen() {
 
   const handleClockIn = async () => {
     try {
-      const docRef = await addDoc(collection(db, 'timesheets'), {
+      const docRef = await addDoc(collection(db, COL_TIMESHEETS), {
         userId, orgId,
         clockIn: new Date().toISOString(),
         status: 'clocked_in',
@@ -85,13 +87,13 @@ export default function TimesheetScreen() {
       const clockInTime = new Date(activeClock.clockIn).getTime()
       const clockOutTime = Date.now()
       const hoursWorked = (clockOutTime - clockInTime) / 3600000
-      await updateDoc(doc(db, 'timesheets', activeClock.id), {
+      await updateDoc(doc(db, COL_TIMESHEETS, activeClock.id), {
         clockOut: new Date().toISOString(),
         hoursWorked: Math.round(hoursWorked * 100) / 100,
         workType: workType.trim(),
         projectId: selectedProject,
         projectName: projects.find(p => p.id === selectedProject)?.name || '',
-        status: 'pending',
+        status: TIMESHEET_PENDING,
         updatedAt: new Date().toISOString()
       })
       setActiveClock(null)
@@ -163,7 +165,7 @@ export default function TimesheetScreen() {
               <View style={styles.historyRight}>
                 <Text style={styles.historyHours}>{ts.hoursWorked ? `${ts.hoursWorked}h` : '--'}</Text>
                 <View style={[styles.statusBadge, { backgroundColor: (STATUS_COLORS[ts.status] || '#888') + '20' }]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLORS[ts.status] || '#888' }]}>{ts.status || 'pending'}</Text>
+                  <Text style={[styles.statusText, { color: STATUS_COLORS[ts.status] || '#888' }]}>{ts.status || TIMESHEET_PENDING}</Text>
                 </View>
               </View>
             </View>

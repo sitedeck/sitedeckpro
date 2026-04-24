@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot, updateDoc, doc } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TIMESHEETS } from '../../constants/collections'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
+import { TIMESHEET_PENDING, TIMESHEET_APPROVED, TIMESHEET_REJECTED } from '../../constants/statuses'
 
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#16a34a', rejected: '#dc2626' }
 
@@ -19,7 +22,7 @@ export default function TimesheetReviewScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc: docRef } = require('firebase/firestore')
-        const userDoc = await getDoc(docRef(db, 'users', user.uid))
+        const userDoc = await getDoc(docRef(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setUserRole(userDoc.data().role)
           setOrgId(userDoc.data().orgId)
@@ -30,8 +33,8 @@ export default function TimesheetReviewScreen() {
   }, [])
 
   useEffect(() => {
-    if (!orgId || (userRole !== 'admin' && userRole !== 'supervisor')) return
-    const q = query(collection(db, 'timesheets'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    if (!orgId || (userRole !== ADMIN && userRole !== SUPERVISOR)) return
+    const q = query(collection(db, COL_TIMESHEETS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setTimesheets(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -41,7 +44,7 @@ export default function TimesheetReviewScreen() {
 
   const handleReview = async (tsId, status) => {
     try {
-      await updateDoc(doc(db, 'timesheets', tsId), { status, updatedAt: new Date().toISOString() })
+      await updateDoc(doc(db, COL_TIMESHEETS, tsId), { status, updatedAt: new Date().toISOString() })
       Alert.alert('Updated', `Timesheet ${status}.`)
     } catch (err) { Alert.alert('Error', err.message) }
   }
@@ -51,11 +54,11 @@ export default function TimesheetReviewScreen() {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  if (userRole !== 'admin' && userRole !== 'supervisor') {
+  if (userRole !== ADMIN && userRole !== SUPERVISOR) {
     return <View style={styles.accessDenied}><Text style={styles.accessText}>Access denied. Supervisors only.</Text></View>
   }
 
-  const pending = timesheets.filter(t => t.status === 'pending')
+  const pending = timesheets.filter(t => t.status === TIMESHEET_PENDING)
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -70,15 +73,15 @@ export default function TimesheetReviewScreen() {
           <Text style={styles.hoursLabel}>hours</Text>
         </View>
       </View>
-      {item.status === 'pending' && (
+      {item.status === TIMESHEET_PENDING && (
         <View style={styles.reviewRow}>
           <TouchableOpacity style={[styles.reviewBtn, styles.rejectBtn]}
-            onPress={() => handleReview(item.id, 'rejected')}>
+            onPress={() => handleReview(item.id, TIMESHEET_REJECTED)}>
             <Ionicons name="close" size={18} color="#dc2626" />
             <Text style={styles.rejectText}>Reject</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.reviewBtn, styles.approveBtn]}
-            onPress={() => handleReview(item.id, 'approved')}>
+            onPress={() => handleReview(item.id, TIMESHEET_APPROVED)}>>
             <Ionicons name="checkmark" size={18} color="#16a34a" />
             <Text style={styles.approveText}>Approve</Text>
           </TouchableOpacity>

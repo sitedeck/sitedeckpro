@@ -9,6 +9,8 @@ import * as Speech from 'expo-speech'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_LESSONS, COL_PROJECTS, COL_ACTIVITY_FEED } from '../../constants/collections'
+import { LESSON_OPEN } from '../../constants/statuses'
 
 const SEVERITY_OPTIONS = ['Low', 'Medium', 'High', 'Critical']
 const SEVERITY_COLORS = {
@@ -39,14 +41,14 @@ export default function NewLessonScreen() {
       if (firebaseUser) {
         setUser(firebaseUser)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, firebaseUser.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserName(firebaseUser.displayName || userDoc.data().name || 'Unknown')
         }
 
         // Load projects
-        const q = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
+        const q = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
         onSnapshot(q, (snap) => {
           setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })))
         })
@@ -112,7 +114,7 @@ export default function NewLessonScreen() {
         category,
         workArea,
         severity,
-        status: 'Open',
+        status: LESSON_OPEN,
         orgId,
         createdBy: user.uid,
         createdByName: userName,
@@ -121,10 +123,10 @@ export default function NewLessonScreen() {
         updatedAt: new Date().toISOString()
       }
 
-      const docRef = await addDoc(collection(db, 'lessons'), lessonData)
+      const docRef = await addDoc(collection(db, COL_LESSONS), lessonData)
 
       // Write activity feed entry
-      await addDoc(collection(db, 'activityFeed'), {
+      await addDoc(collection(db, COL_ACTIVITY_FEED), {
         orgId,
         type: 'lesson_created',
         lessonId: docRef.id,

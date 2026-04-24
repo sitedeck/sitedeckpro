@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TOOLBOX_TALKS, COL_USERS } from '../../constants/collections'
+import { TOOLBOX_OPEN } from '../../constants/statuses'
 
 export default function ToolboxListScreen() {
   const navigation = useNavigation()
@@ -17,7 +19,7 @@ export default function ToolboxListScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setOrgId(userDoc.data().orgId)
       }
     })
@@ -26,7 +28,7 @@ export default function ToolboxListScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'toolboxTalks'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_TOOLBOX_TALKS), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setTalks(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -52,7 +54,7 @@ export default function ToolboxListScreen() {
           <Ionicons name={item.locked ? 'lock-closed' : 'lock-open-outline'} size={12}
             color={item.locked ? '#16a34a' : '#f59e0b'} />
           <Text style={[styles.lockedText, { color: item.locked ? '#16a34a' : '#f59e0b' }]}>
-            {item.locked ? 'Locked' : 'Open'}
+            {item.locked ? 'Locked' : TOOLBOX_OPEN}
           </Text>
         </View>
       </View>

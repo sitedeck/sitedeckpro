@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, addDoc, collection } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_JHA, COL_ACTIVITY_FEED } from '../../constants/collections'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
+import { JHA_DRAFT, JHA_APPROVED } from '../../constants/statuses'
 
 const STATUS_COLORS = { Draft: '#f59e0b', Submitted: '#2563eb', Approved: '#16a34a', Rejected: '#dc2626' }
 const RISK_COLORS = { Low: '#3b82f6', Medium: '#f59e0b', High: '#dc2626' }
@@ -21,7 +24,7 @@ export default function JHADetailScreen({ navigation, route }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid)
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setUserRole(userDoc.data().role)
       }
     })
@@ -30,7 +33,7 @@ export default function JHADetailScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'jha', jhaId))
+      const snap = await getDoc(doc(db, COL_JHA, jhaId))
       if (snap.exists()) setJha({ id: snap.id, ...snap.data() })
       setLoading(false)
     }
@@ -40,12 +43,12 @@ export default function JHADetailScreen({ navigation, route }) {
   const handleApprove = async () => {
     setSaving(true)
     try {
-      await updateDoc(doc(db, 'jha', jhaId), { status: 'Approved', updatedAt: new Date().toISOString() })
-      await addDoc(collection(db, 'activityFeed'), {
+      await updateDoc(doc(db, COL_JHA, jhaId), { status: JHA_APPROVED, updatedAt: new Date().toISOString() })
+      await addDoc(collection(db, COL_ACTIVITY_FEED), {
         orgId: jha.orgId, type: 'jha_approved', jhaId, userId, userName: jha.createdByName || 'Unknown',
         message: `JHA approved by ${userRole}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
       })
-      const snap = await getDoc(doc(db, 'jha', jhaId))
+      const snap = await getDoc(doc(db, COL_JHA, jhaId))
       setJha({ id: snap.id, ...snap.data() })
     } catch (err) { Alert.alert('Error', err.message) }
     finally { setSaving(false) }
@@ -56,8 +59,8 @@ export default function JHADetailScreen({ navigation, route }) {
     const existing = jha.crewSignoffs.find(s => s.userId === userId)
     if (existing) { Alert.alert('Already Signed', 'You have already signed off on this JHA.'); return }
     const newSignoffs = [...jha.crewSignoffs, { userId, signedAt: new Date().toISOString() }]
-    await updateDoc(doc(db, 'jha', jhaId), { crewSignoffs: newSignoffs, updatedAt: new Date().toISOString() })
-    const snap = await getDoc(doc(db, 'jha', jhaId))
+    await updateDoc(doc(db, COL_JHA, jhaId), { crewSignoffs: newSignoffs, updatedAt: new Date().toISOString() })
+    const snap = await getDoc(doc(db, COL_JHA, jhaId))
     setJha({ id: snap.id, ...snap.data() })
     Alert.alert('Signed', 'Your acknowledgment has been recorded.')
   }
@@ -76,7 +79,7 @@ export default function JHADetailScreen({ navigation, route }) {
       </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[jha.status] || '#888') + '20' }]}>
-          <Text style={[styles.badgeText, { color: STATUS_COLORS[jha.status] || '#888' }]}>{jha.status || 'Draft'}</Text>
+          <Text style={[styles.badgeText, { color: STATUS_COLORS[jha.status] || '#888' }]}>{jha.status || JHA_DRAFT}</Text>
         </View>
 
         <Text style={styles.sectionLabel}>Work Description</Text>
@@ -116,14 +119,14 @@ export default function JHADetailScreen({ navigation, route }) {
           </View>
         )) || <Text style={styles.bodyText}>No sign-offs yet</Text>}
 
-        {jha.status === 'Draft' && userRole !== 'crew' && (
+        {jha.status === JHA_DRAFT && userRole !== 'crew' && (
           <TouchableOpacity style={[styles.approveBtn, saving && styles.approveBtnDisabled]}
             onPress={handleApprove} disabled={saving}>
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.approveText}>Approve JHA</Text>}
           </TouchableOpacity>
         )}
 
-        {jha.status !== 'Approved' && jha.crewSignoffs?.every(s => s.userId !== userId) && (
+        {jha.status !== JHA_APPROVED && jha.crewSignoffs?.every(s => s.userId !== userId) && (
           <TouchableOpacity style={styles.signOffBtn} onPress={handleSignOff}>
             <Text style={styles.signOffText}>I Acknowledge and Sign Off</Text>
           </TouchableOpacity>

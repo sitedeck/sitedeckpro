@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_JHA, COL_USERS } from '../../constants/collections'
+import { JHA_DRAFT } from '../../constants/statuses'
 
 const STATUS_COLORS = { Draft: '#f59e0b', Submitted: '#2563eb', Approved: '#16a34a', Rejected: '#dc2626' }
 
@@ -22,7 +24,7 @@ export default function JHAListScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setOrgId(userDoc.data().orgId)
       }
     })
@@ -31,7 +33,7 @@ export default function JHAListScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'jha'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_JHA), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, (snap) => {
       setJhas(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -57,7 +59,7 @@ export default function JHAListScreen() {
         <Text style={styles.cardTitle} numberOfLines={2}>{item.description || 'Untitled JHA'}</Text>
         <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[item.status] || '#888') + '20' }]}>
           <Text style={[styles.badgeText, { color: STATUS_COLORS[item.status] || '#888' }]}>
-            {item.status || 'Draft'}
+            {item.status || JHA_DRAFT}
           </Text>
         </View>
       </View>

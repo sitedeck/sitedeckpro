@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_EQUIPMENT } from '../../constants/collections'
+import { ADMIN } from '../../constants/roles'
 
 const STATUS_COLORS = { available: '#16a34a', 'checked-out': '#f59e0b', maintenance: '#dc2626' }
 
@@ -20,7 +22,7 @@ export default function EquipmentListScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserRole(userDoc.data().role)
@@ -32,7 +34,7 @@ export default function EquipmentListScreen() {
 
   useEffect(() => {
     if (!orgId) return
-    const q = query(collection(db, 'equipment'), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
+    const q = query(collection(db, COL_EQUIPMENT), where('orgId', '==', orgId), orderBy('createdAt', 'desc'))
     const unsub = onSnapshot(q, snap => {
       setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
@@ -71,7 +73,7 @@ export default function EquipmentListScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Equipment</Text>
-        {userRole === 'admin' && (
+        {userRole === ADMIN && (
           <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddEquipment')}>
             <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>

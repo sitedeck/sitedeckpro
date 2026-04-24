@@ -8,10 +8,12 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, addDoc, collection } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_LESSONS, COL_USERS, COL_ACTIVITY_FEED } from '../../constants/collections'
+import { LESSON_OPEN, LESSON_REVIEWED, LESSON_CLOSED } from '../../constants/statuses'
+import { ADMIN, SUPERVISOR } from '../../constants/roles'
 
-const SEVERITY_COLORS = { Low: '#3b82f6', Medium: '#f59e0b', High: '#f97316', Critical: '#dc2626' }
-const STATUS_COLORS = { Open: '#dc2626', Reviewed: '#2563eb', Closed: '#16a34a' }
-const STATUS_OPTIONS = ['Open', 'Reviewed', 'Closed']
+const STATUS_COLORS = { [LESSON_OPEN]: '#dc2626', [LESSON_REVIEWED]: '#2563eb', [LESSON_CLOSED]: '#16a34a' }
+const STATUS_OPTIONS = [LESSON_OPEN, LESSON_REVIEWED, LESSON_CLOSED]
 
 export default function LessonDetailScreen() {
   const navigation = useNavigation()
@@ -33,7 +35,7 @@ export default function LessonDetailScreen() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUserId(firebaseUser.uid)
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, firebaseUser.uid))
         if (userDoc.exists()) setUserRole(userDoc.data().role)
       }
     })
@@ -42,7 +44,7 @@ export default function LessonDetailScreen() {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'lessons', lessonId))
+      const snap = await getDoc(doc(db, COL_LESSONS, lessonId))
       if (snap.exists()) {
         setLesson({ id: snap.id, ...snap.data() })
       }
@@ -62,13 +64,13 @@ export default function LessonDetailScreen() {
     if (lesson.status === newStatus) return
 
     let notes = ''
-    if (newStatus === 'Reviewed') {
+    if (newStatus === LESSON_REVIEWED) {
       if (!reviewNotes.trim()) {
         Alert.alert('Required', 'Please enter review notes before marking as Reviewed.')
         return
       }
       notes = reviewNotes
-    } else if (newStatus === 'Closed') {
+    } else if (newStatus === LESSON_CLOSED) {
       if (!closeNotes.trim()) {
         Alert.alert('Required', 'Please enter close out notes before marking as Closed.')
         return
@@ -78,14 +80,14 @@ export default function LessonDetailScreen() {
 
     setStatusUpdating(true)
     try {
-      await updateDoc(doc(db, 'lessons', lessonId), {
+      await updateDoc(doc(db, COL_LESSONS, lessonId), {
         status: newStatus,
         notes: notes || lesson.notes || '',
         updatedAt: new Date().toISOString()
       })
 
       // Write activity feed
-      await addDoc(collection(db, 'activityFeed'), {
+      await addDoc(collection(db, COL_ACTIVITY_FEED), {
         orgId: lesson.orgId,
         type: 'lesson_status_changed',
         lessonId,
@@ -98,7 +100,7 @@ export default function LessonDetailScreen() {
       })
 
       // Refresh
-      const updated = await getDoc(doc(db, 'lessons', lessonId))
+      const updated = await getDoc(doc(db, COL_LESSONS, lessonId))
       setLesson({ id: updated.id, ...updated.data() })
       setShowReviewNotes(false)
       setShowCloseNotes(false)
@@ -111,7 +113,7 @@ export default function LessonDetailScreen() {
     }
   }
 
-  const canEdit = userRole === 'admin' || userRole === 'supervisor'
+  const canEdit = userRole === ADMIN || userRole === SUPERVISOR
 
   if (loading) {
     return (
@@ -156,7 +158,7 @@ export default function LessonDetailScreen() {
           </View>
           <View style={[styles.badge, { backgroundColor: (STATUS_COLORS[lesson.status] || '#888') + '20' }]}>
             <Text style={[styles.statusBadgeText, { color: STATUS_COLORS[lesson.status] || '#888' }]}>
-              {lesson.status || 'Open'}
+              {lesson.status || LESSON_OPEN}
             </Text>
           </View>
         </View>
@@ -221,8 +223,8 @@ export default function LessonDetailScreen() {
               ]}
               onPress={() => {
                 if (lesson.status === st) return
-                if (st === 'Reviewed') setShowReviewNotes(true)
-                else if (st === 'Closed') setShowCloseNotes(true)
+                if (st === LESSON_REVIEWED) setShowReviewNotes(true)
+                else if (st === LESSON_CLOSED) setShowCloseNotes(true)
                 else handleStatusUpdate(st)
               }}
               disabled={statusUpdating}
@@ -253,8 +255,8 @@ export default function LessonDetailScreen() {
                 <Text style={styles.notesCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.notesSave, { backgroundColor: STATUS_COLORS.Reviewed }]}
-                onPress={() => handleStatusUpdate('Reviewed')}
+                style={[styles.notesSave, { backgroundColor: STATUS_COLORS[LESSON_REVIEWED] }]}
+                onPress={() => handleStatusUpdate(LESSON_REVIEWED)}
                 disabled={statusUpdating}
               >
                 <Text style={styles.notesSaveText}>Save</Text>
@@ -282,8 +284,8 @@ export default function LessonDetailScreen() {
                 <Text style={styles.notesCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.notesSave, { backgroundColor: STATUS_COLORS.Closed }]}
-                onPress={() => handleStatusUpdate('Closed')}
+                style={[styles.notesSave, { backgroundColor: STATUS_COLORS[LESSON_CLOSED] }]}
+                onPress={() => handleStatusUpdate(LESSON_CLOSED)}
                 disabled={statusUpdating}
               >
                 <Text style={styles.notesSaveText}>Save</Text>

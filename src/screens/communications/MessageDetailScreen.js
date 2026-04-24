@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_COMMUNICATIONS } from '../../constants/collections'
 
 const TYPE_COLORS = { 'Safety Alert': '#dc2626', 'Event': '#f59e0b', 'General': '#2563eb' }
 const TYPE_BG = { 'Safety Alert': '#fef2f2', 'Event': '#fffbeb', 'General': '#eff6ff' }
@@ -24,12 +25,12 @@ export default function MessageDetailScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'communications', messageId))
+      const snap = await getDoc(doc(db, COL_COMMUNICATIONS, messageId))
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
         setMessage(data)
         if (!data.readBy?.includes(userId)) {
-          await updateDoc(doc(db, 'communications', messageId), {
+          await updateDoc(doc(db, COL_COMMUNICATIONS, messageId), {
             readBy: arrayUnion(userId)
           })
         }

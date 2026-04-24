@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_CERTIFICATIONS } from '../../constants/collections'
 
 const CERT_OPTIONS = ['OSHA 10', 'OSHA 30', 'First Aid/CPR', 'Equipment Operator', 'Confined Space', 'Fall Protection', 'Electrical Safety', 'Custom']
 
@@ -24,7 +25,7 @@ export default function AddCertScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) setOrgId(userDoc.data().orgId)
       }
     })
@@ -39,7 +40,7 @@ export default function AddCertScreen() {
 
     setSaving(true)
     try {
-      await addDoc(collection(db, 'certifications'), {
+      await addDoc(collection(db, COL_CERTIFICATIONS), {
         userId, orgId,
         name: certName,
         issueDate,

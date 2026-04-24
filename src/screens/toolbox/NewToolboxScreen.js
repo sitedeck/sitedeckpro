@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { addDoc, collection, onSnapshot, query, where, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { COL_TOOLBOX_TALKS, COL_PROJECTS, COL_USERS } from '../../constants/collections'
 
 export default function NewToolboxScreen() {
   const navigation = useNavigation()
@@ -25,13 +26,13 @@ export default function NewToolboxScreen() {
       if (user) {
         setUserId(user.uid)
         const { getDoc, doc } = require('firebase/firestore')
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           setOrgId(userDoc.data().orgId)
           setUserName(user.displayName || userDoc.data().name || 'Unknown')
-          const projQ = query(collection(db, 'projects'), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
+          const projQ = query(collection(db, COL_PROJECTS), where('orgId', '==', userDoc.data().orgId), orderBy('createdAt', 'desc'))
           onSnapshot(projQ, snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-          const userQ = query(collection(db, 'users'), where('orgId', '==', userDoc.data().orgId))
+          const userQ = query(collection(db, COL_USERS), where('orgId', '==', userDoc.data().orgId))
           onSnapshot(userQ, snap => setCrewMembers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
         }
       }
@@ -47,7 +48,7 @@ export default function NewToolboxScreen() {
     if (!topic.trim()) { Alert.alert('Required', 'Topic is required'); return }
     setSaving(true)
     try {
-      await addDoc(collection(db, 'toolboxTalks'), {
+      await addDoc(collection(db, COL_TOOLBOX_TALKS), {
         orgId,
         topic: topic.trim(),
         description: description.trim(),

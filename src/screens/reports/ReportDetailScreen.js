@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../firebase.config'
+import { COL_DAILY_REPORTS } from '../../constants/collections'
 
 export default function ReportDetailScreen({ navigation, route }) {
   const { reportId } = route.params
@@ -12,7 +13,7 @@ export default function ReportDetailScreen({ navigation, route }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDoc(doc(db, 'dailyReports', reportId))
+      const snap = await getDoc(doc(db, COL_DAILY_REPORTS, reportId))
       if (snap.exists()) setReport({ id: snap.id, ...snap.data() })
       setLoading(false)
     }

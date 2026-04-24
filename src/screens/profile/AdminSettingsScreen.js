@@ -5,6 +5,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, updateDoc, addDoc, collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
 import { auth, db } from '../../firebase.config'
+import { ADMIN, SUPERVISOR, MEMBER, ROLES } from '../../constants/roles'
+import { STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED } from '../../constants/statuses'
+import { COL_ORGANIZATIONS, COL_USERS, COL_PROJECTS } from '../../constants/collections'
+import { PLAN_CORE } from '../../constants/plans'
 
 const DEFAULT_WORK_AREAS = ['Substation', 'BESS', 'Collection', 'TLine']
 const DEFAULT_CATEGORIES = ['Engineering', 'Execution', 'Project Quality', 'Safety']
@@ -27,20 +31,20 @@ export default function AdminSettingsScreen() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
+        const userDoc = await getDoc(doc(db, COL_USERS, user.uid))
         if (userDoc.exists()) {
           const data = userDoc.data()
           setUserRole(data.role)
           setOrgId(data.orgId)
-          if (data.role === 'admin') {
-            const orgDoc = await getDoc(doc(db, 'organizations', data.orgId))
+          if (data.role === ADMIN) {
+            const orgDoc = await getDoc(doc(db, COL_ORGANIZATIONS, data.orgId))
             if (orgDoc.exists()) {
               setOrgData({ id: orgDoc.id, ...orgDoc.data() })
               setWorkAreas(orgDoc.data().workAreas || DEFAULT_WORK_AREAS)
               setCategories(orgDoc.data().categories || DEFAULT_CATEGORIES)
             }
-            onSnapshot(query(collection(db, 'users'), where('orgId', '==', data.orgId)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-            onSnapshot(query(collection(db, 'projects'), where('orgId', '==', data.orgId), orderBy('createdAt', 'desc')), snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+            onSnapshot(query(collection(db, COL_USERS), where('orgId', '==', data.orgId)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+            onSnapshot(query(collection(db, COL_PROJECTS), where('orgId', '==', data.orgId), orderBy('createdAt', 'desc')), snap => setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
           }
         }
         setLoading(false)
@@ -51,23 +55,23 @@ export default function AdminSettingsScreen() {
 
   const updateOrg = async (updates) => {
     try {
-      await updateDoc(doc(db, 'organizations', orgId), updates)
+      await updateDoc(doc(db, COL_ORGANIZATIONS, orgId), updates)
       setOrgData(prev => ({ ...prev, ...updates }))
     } catch (err) { Alert.alert('Error', err.message) }
   }
 
   const handleApprove = async (userId) => {
-    try { await updateDoc(doc(db, 'users', userId), { status: 'approved', updatedAt: new Date().toISOString() }) }
+    try { await updateDoc(doc(db, COL_USERS, userId), { status: STATUS_APPROVED, updatedAt: new Date().toISOString() }) }
     catch (err) { Alert.alert('Error', err.message) }
   }
 
   const handleReject = async (userId) => {
-    try { await updateDoc(doc(db, 'users', userId), { status: 'rejected', updatedAt: new Date().toISOString() }) }
+    try { await updateDoc(doc(db, COL_USERS, userId), { status: STATUS_REJECTED, updatedAt: new Date().toISOString() }) }
     catch (err) { Alert.alert('Error', err.message) }
   }
 
   const handleChangeRole = async (userId, newRole) => {
-    try { await updateDoc(doc(db, 'users', userId), { role: newRole, updatedAt: new Date().toISOString() }) }
+    try { await updateDoc(doc(db, COL_USERS, userId), { role: newRole, updatedAt: new Date().toISOString() }) }
     catch (err) { Alert.alert('Error', err.message) }
   }
 
@@ -102,7 +106,7 @@ export default function AdminSettingsScreen() {
   const addProject = async () => {
     if (!newProjectName.trim()) return
     try {
-      await addDoc(collection(db, 'projects'), {
+      await addDoc(collection(db, COL_PROJECTS), {
         orgId, name: newProjectName.trim(), status: 'active',
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
       })
@@ -111,7 +115,7 @@ export default function AdminSettingsScreen() {
     } catch (err) { Alert.alert('Error', err.message) }
   }
 
-  if (userRole !== 'admin') {
+  if (userRole !== ADMIN) {
     return <View style={styles.accessDenied}><Text style={styles.accessText}>Admin access required.</Text></View>
   }
 
@@ -129,7 +133,7 @@ export default function AdminSettingsScreen() {
         <Text style={styles.sectionLabel}>Organization</Text>
         <View style={styles.card}>
           <Text style={styles.orgName}>{orgData?.name || 'Loading...'}</Text>
-          <Text style={styles.orgMeta}>Plan: {orgData?.plan || 'core'}</Text>
+          <Text style={styles.orgMeta}>Plan: {orgData?.plan || PLAN_CORE}</Text>
         </View>
 
         {/* User Management */}
@@ -140,16 +144,16 @@ export default function AdminSettingsScreen() {
               <Text style={styles.userName}>{u.name || 'Unknown'}</Text>
               <Text style={styles.userEmail}>{u.email}</Text>
               <View style={styles.userBadges}>
-                <View style={[styles.roleBadgeSmall, { backgroundColor: u.role === 'admin' ? '#fef2f2' : '#eff6ff' }]}>
-                  <Text style={[styles.roleTextSmall, { color: u.role === 'admin' ? '#dc2626' : '#2563eb' }]}>{u.role}</Text>
+                <View style={[styles.roleBadgeSmall, { backgroundColor: u.role === ADMIN ? '#fef2f2' : '#eff6ff' }]}>
+                  <Text style={[styles.roleTextSmall, { color: u.role === ADMIN ? '#dc2626' : '#2563eb' }]}>{u.role}</Text>
                 </View>
-                <View style={[styles.statusBadgeSmall, { backgroundColor: u.status === 'approved' ? '#f0fdf4' : u.status === 'rejected' ? '#fef2f2' : '#fef3c7' }]}>
-                  <Text style={[styles.statusTextSmall, { color: u.status === 'approved' ? '#16a34a' : u.status === 'rejected' ? '#dc2626' : '#f59e0b' }]}>{u.status}</Text>
+                <View style={[styles.statusBadgeSmall, { backgroundColor: u.status === STATUS_APPROVED ? '#f0fdf4' : u.status === STATUS_REJECTED ? '#fef2f2' : '#fef3c7' }]}>
+                  <Text style={[styles.statusTextSmall, { color: u.status === STATUS_APPROVED ? '#16a34a' : u.status === STATUS_REJECTED ? '#dc2626' : '#f59e0b' }]}>{u.status}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.userActions}>
-              {u.status === 'pending' && (
+              {u.status === STATUS_PENDING && (
                 <>
                   <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(u.id)}>
                     <Ionicons name="checkmark" size={16} color="#16a34a" />
@@ -159,7 +163,7 @@ export default function AdminSettingsScreen() {
                   </TouchableOpacity>
                 </>
               )}
-              {['admin', 'supervisor', 'member'].map(r => (
+              {ROLES.map(r => (
                 <TouchableOpacity key={r} style={[styles.rolePill, u.role === r && styles.rolePillActive]}
                   onPress={() => handleChangeRole(u.id, r)}>
                   <Text style={[styles.rolePillText, u.role === r && styles.rolePillTextActive]}>{r}</Text>
